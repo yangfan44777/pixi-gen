@@ -1,0 +1,17 @@
+{
+	"meta": {
+		"image": "spritesheet.png",
+		"size": {"w":26,"h":37},
+		"scale": "1"
+	},
+	"frames": {
+		"bunny.png":
+		{
+			"frame": {"x":0,"y":0,"w":26,"h":37},
+			"rotated": false,
+			"trimmed": false,
+			"spriteSourceSize": {"x":0,"y":0,"w":26,"h":37},
+			"sourceSize": {"w":26,"h":37}
+		}
+	}
+}
