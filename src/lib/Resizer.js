@@ -2,70 +2,69 @@
  * @file pixi 精灵的放大缩小旋转控件
  */
 import * as PIXI from 'pixi.js'
-
-const defaultOptions = {
-    x: 0,
-    y: 0
-};
+import vec3 from 'gl-vec3';
 
 export default class Resizer extends PIXI.Container {
-
     
     constructor(resizeElement, options) {
         super();
-        this.resizeElement = resizeElement;
-        options = {
-            ...defaultOptions,
+
+        this.options = {
+            x: 0,
+            y: 0,
             ...options
         };
-        const rectGraphic = this.rectGraphic = new PIXI.Graphics();
-        rectGraphic.beginFill(0xFFFFFF, 0);
-        rectGraphic.lineStyle(4, 0xffffff, 1);
-        
-        const {
-            x, y, width, height
-        } = options;
+        this.x = this.options.x;
+        this.y = this.options.y;
 
-        rectGraphic.drawRect(0, 0, resizeElement.width, resizeElement.height);
-        rectGraphic.pivot.x = rectGraphic.width / 2;
-        rectGraphic.pivot.y = rectGraphic.height / 2;
-
-        this.x = x;
-        this.y = y;
-
-        this.addChild(resizeElement, rectGraphic);
         this.interactive = true;
+
+        this.resizeElement = resizeElement; 
+        this.rectGraphic = new PIXI.Graphics();
+        this.selfGlobalPositionCache = this.getGlobalPosition();
         
-        /**
-         * 声明handlers
-         */
-        this.resizeHandler = new PIXI.Graphics().beginFill(0xFFFFFF, 1).lineStyle(1, 0xffffff, 1).drawRect(0, 0, 20, 20);
-        this.resizeHandler.pivot.x = this.resizeHandler.width / 2 - 2;
-        this.resizeHandler.pivot.y = this.resizeHandler.height / 2 - 2;
-        this.resizeHandler.interactive = true;
-        this.resizeHandler.x = -rectGraphic.width / 2;
-        this.resizeHandler.y = -rectGraphic.height / 2;
-        this.addChild(this.resizeHandler);
+        this.initHandlers();
+        this.updateRect();
+
         this.initEvents();
+        this.addChild(resizeElement, this.rectGraphic);
     }
 
-    // 重置宽度
-    setWidth() {
+    initHandlers() {
+        this.resizeHandler = new PIXI.Graphics().beginFill(0xFFFFFF, 1).lineStyle(1, 0xFFFFFF, 1).drawRect(0, 0, 30, 30);
+        this.resizeHandler.pivot.x = this.resizeHandler.width / 2 - 1;
+        this.resizeHandler.pivot.y = this.resizeHandler.height / 2 - 1;
+        this.resizeHandler.interactive = true;
+
+        this.rotateHandler = new PIXI.Graphics().beginFill(0xFFFFFF, 1).lineStyle(1, 0xFFFFFF, 1).drawCircle(0, 0, 15);
+        this.rotateHandler.interactive = true;
         
+        this.addChild(this.resizeHandler, this.rotateHandler);
     }
 
-    // 重置高度
-    setHeight() {
-
+    hide() {
+        this.resizeHandler.visible = this.rotateHandler.visible = this.rectGraphic.visible = false;
     }
 
-    drawRect() {
+    show() {
+        this.resizeHandler.visible = this.rotateHandler.visible = this.rectGraphic.visible = true;
+    }
+
+    updateRect() {
         this.rectGraphic.clear();
         this.rectGraphic.beginFill(0xFFFFFF, 0);
-        this.rectGraphic.lineStyle(4, 0xffffff, 1);
+        this.rectGraphic.lineStyle(4, 0xFFFFFF, 1);
         this.rectGraphic.drawRect(0, 0, this.resizeElement.width, this.resizeElement.height);
         this.rectGraphic.pivot.x = this.rectGraphic.width / 2;
         this.rectGraphic.pivot.y = this.rectGraphic.height / 2;
+        
+        // 重置resizeHandler位置
+        this.resizeHandler.x = -this.rectGraphic.width / 2;
+        this.resizeHandler.y = -this.rectGraphic.height / 2;
+        
+        // 重置rotateHandler位置
+        this.rotateHandler.x = 0;
+        this.rotateHandler.y = this.rectGraphic.height / 2 + 50;
     }
 
     dragable(item, options) {
@@ -76,7 +75,6 @@ export default class Resizer extends PIXI.Container {
         .on('pointermove', onDragMove);
 
         function onDragStart(event) {
-
             event.stopPropagation();
             this.data = event.data;
             this.dragging = true;
@@ -95,13 +93,13 @@ export default class Resizer extends PIXI.Container {
                 var newPosition = this.data.getLocalPosition(this.parent);
                 this.x = newPosition.x;
                 this.y = newPosition.y;
-                options && options.onDragMove && options.onDragMove(newPosition, this.startPosition);
-
+                options && options.onDragMove && options.onDragMove(newPosition, this.startPosition, event.data.global);
             }
         }
     }
 
     initEvents() {
+
         this.dragable(this.resizeHandler, {
             onDragStart: () => {
                 this.resizeElement.startSize = {
@@ -114,11 +112,21 @@ export default class Resizer extends PIXI.Container {
                 const newHeight = this.resizeElement.startSize.height + (-newPosition.y + startPosition.y) * 2;
                 this.resizeElement.width = newWidth <= 0 ? 1 : newWidth;
                 this.resizeElement.height = newHeight <= 0 ? 1 : newHeight;
-                this.drawRect();
-                this.resizeHandler.x = -this.rectGraphic.width / 2;
-                this.resizeHandler.y = -this.rectGraphic.height / 2;
+                this.updateRect();
             }
-        })
+        });
+        
+        this.dragable(this.rotateHandler, {
+            onDragStart: () => {
+                this.selfGlobalPositionCache = this.getGlobalPosition();
+            },
+            onDragMove: (newPosition, startPosition, globalPosition) => {
+                this.rotation = (globalPosition.x - this.selfGlobalPositionCache.x > 0 ? -1 : 1) * vec3.angle([globalPosition.x - this.selfGlobalPositionCache.x, globalPosition.y - this.selfGlobalPositionCache.y, 1], [0, 100, 1]);
+                this.updateRect();
+            }
+        });
         this.dragable(this);
     }
+
+    
 }

@@ -24,7 +24,8 @@ PIXI.loader.add('resources', spritesheet.url).load((loader, resources) => {
     bunny.anchor.y = 0.5;
 // 
 
-
+    bunny.scale.x = 5;
+    bunny.scale.y = 5;
     const resizer = new Resizer(bunny, {
         x: app.screen.width / 2,
         y: app.screen.height / 2
@@ -32,6 +33,7 @@ PIXI.loader.add('resources', spritesheet.url).load((loader, resources) => {
     // resizer.scale.x *= 4.25;
     // resizer.scale.y *= 4.25;
     
+    // resizer.hide();
 
     app.stage.addChild(resizer);
     
