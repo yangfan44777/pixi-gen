@@ -10,50 +10,65 @@ const defaultOptions = {
 
 export default class Resizer extends PIXI.Container {
 
-    constructor(children, options) {
+    
+    constructor(resizeElement, options) {
         super();
+        this.resizeElement = resizeElement;
         options = {
             ...defaultOptions,
             ...options
         };
-        const rectGraphic = new PIXI.Graphics();
-        rectGraphic.beginFill(0xFF3300, 0);
-        rectGraphic.lineStyle(1, 0xffffff, 1);
+        const rectGraphic = this.rectGraphic = new PIXI.Graphics();
+        rectGraphic.beginFill(0xFFFFFF, 0);
+        rectGraphic.lineStyle(4, 0xffffff, 1);
         
         const {
             x, y, width, height
         } = options;
 
-        // this.pivot.x = this.width / 2;
-        // this.pivot.y = this.height / 2;
-
-        const rect = this.rect = rectGraphic.drawRect(0, 0, children.width, children.height);
-        rect.pivot.x = rect.width / 2;
-        rect.pivot.y = rect.height / 2;
+        rectGraphic.drawRect(0, 0, resizeElement.width, resizeElement.height);
+        rectGraphic.pivot.x = rectGraphic.width / 2;
+        rectGraphic.pivot.y = rectGraphic.height / 2;
 
         this.x = x;
         this.y = y;
 
-        this.addChild(children).addChild(rect);
+        this.addChild(resizeElement, rectGraphic);
         this.interactive = true;
-
+        
         /**
          * 声明handlers
          */
-        this.handlers = [];
-        for (let i = 0; i < 4; i++) {
-            this.handlers[i] = new PIXI.Graphics().beginFill(0xFF3300, 1).lineStyle(1, 0xffffff, 1).drawRect(0, 0, 10, 10)
-            this.handlers[i].pivot.x = this.handlers[i].width / 2;
-            this.handlers[i].pivot.y = this.handlers[i].height / 2;
-            this.handlers[i].interactive = true;
-            this.handlers[i].x = i % 2 === 0 ? -rect.width/2 : rect.width/2;
-            this.handlers[i].y = i < 2 ? -rect.height/2 : rect.height/2;
-            this.addChild(this.handlers[i]);
-        }
+        this.resizeHandler = new PIXI.Graphics().beginFill(0xFFFFFF, 1).lineStyle(1, 0xffffff, 1).drawRect(0, 0, 20, 20);
+        this.resizeHandler.pivot.x = this.resizeHandler.width / 2 - 2;
+        this.resizeHandler.pivot.y = this.resizeHandler.height / 2 - 2;
+        this.resizeHandler.interactive = true;
+        this.resizeHandler.x = -rectGraphic.width / 2;
+        this.resizeHandler.y = -rectGraphic.height / 2;
+        this.addChild(this.resizeHandler);
         this.initEvents();
     }
 
-    dragable(item) {
+    // 重置宽度
+    setWidth() {
+        
+    }
+
+    // 重置高度
+    setHeight() {
+
+    }
+
+    drawRect() {
+        this.rectGraphic.clear();
+        this.rectGraphic.beginFill(0xFFFFFF, 0);
+        this.rectGraphic.lineStyle(4, 0xffffff, 1);
+        this.rectGraphic.drawRect(0, 0, this.resizeElement.width, this.resizeElement.height);
+        this.rectGraphic.pivot.x = this.rectGraphic.width / 2;
+        this.rectGraphic.pivot.y = this.rectGraphic.height / 2;
+    }
+
+    dragable(item, options) {
         item
         .on('pointerdown', onDragStart)
         .on('pointerup', onDragEnd)
@@ -61,47 +76,49 @@ export default class Resizer extends PIXI.Container {
         .on('pointermove', onDragMove);
 
         function onDragStart(event) {
-            // store a reference to the data
-            // the reason for this is because of multitouch
-            // we want to track the movement of this particular touch
+
             event.stopPropagation();
             this.data = event.data;
-            // this.scale.x *= 1.2;
-            // this.scale.y *= 1.2;
             this.dragging = true;
+            this.startPosition = this.data.getLocalPosition(this.parent);
+            options && options.onDragStart && options.onDragStart(this.startPosition);
         }
 
         function onDragEnd(event) {
             event.stopPropagation();
-            // this.scale.x /= 1.2;
-            // this.scale.y /= 1.2;
             this.dragging = false;
-            // set the interaction data to null
             this.data = null;
         }
 
         function onDragMove(event) {
-
             if (this.dragging) {
                 var newPosition = this.data.getLocalPosition(this.parent);
                 this.x = newPosition.x;
                 this.y = newPosition.y;
+                options && options.onDragMove && options.onDragMove(newPosition, this.startPosition);
+
             }
         }
     }
 
     initEvents() {
-
-        // this.handlerLT.on('pointerdown', (e) => {
-        //     e.stopPropagation();
-        // })
-        // this.handlerLT.on('pointerup', (e) => {
-        //     e.stopPropagation();
-        // })
-        // this.handlerLT.on('pointerupoutside', (e) => {
-        //     e.stopPropagation();
-        // })
-        this.handlers.forEach(this.dragable);
+        this.dragable(this.resizeHandler, {
+            onDragStart: () => {
+                this.resizeElement.startSize = {
+                    width: this.resizeElement.width,
+                    height: this.resizeElement.height,
+                };
+            },
+            onDragMove: (newPosition, startPosition) => {
+                const newWidth = this.resizeElement.startSize.width + (-newPosition.x + startPosition.x) * 2;
+                const newHeight = this.resizeElement.startSize.height + (-newPosition.y + startPosition.y) * 2;
+                this.resizeElement.width = newWidth <= 0 ? 1 : newWidth;
+                this.resizeElement.height = newHeight <= 0 ? 1 : newHeight;
+                this.drawRect();
+                this.resizeHandler.x = -this.rectGraphic.width / 2;
+                this.resizeHandler.y = -this.rectGraphic.height / 2;
+            }
+        })
         this.dragable(this);
     }
 }
