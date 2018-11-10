@@ -203,7 +203,7 @@ export default class Resizer extends PIXI.Sprite {
         });
         
         this.dragable(this.rotateHandler, {
-            onDragStart: (startPosition) => {
+            onDragStart: () => {
                 this.selfGlobalPositionCache = this.getGlobalPosition();
                 
                 if (this.anchor.x === 0) {
@@ -211,8 +211,6 @@ export default class Resizer extends PIXI.Sprite {
                 } else {
                     this.a = (this.resizeElement.height * (1 - this.anchor.y)) / (this.resizeElement.width * (1 - this.anchor.x));
                 }
-            
-                console.log('a:', this.a);
             },
             onDragMove: (newPosition, startPosition, globalPosition) => {
                 
@@ -234,6 +232,4 @@ export default class Resizer extends PIXI.Sprite {
             }
         });
     }
-
-    
 }

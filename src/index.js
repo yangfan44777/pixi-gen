@@ -20,8 +20,8 @@ PIXI.loader.add('resources', spritesheet.url).load((loader, resources) => {
     const container = new PIXI.Container();    
 
     // Rotate around the center
-    bunny.anchor.x = 0.5;
-    bunny.anchor.y = 0.4;
+    bunny.anchor.x = 0.2;
+    bunny.anchor.y = 0.2;
 
     container.x = 300;
     container.y = 600;
@@ -67,7 +67,6 @@ PIXI.loader.add('resources', spritesheet.url).load((loader, resources) => {
     window.bunny2 = bunny2;
     app.stage.addChild(container, bunny2);
     app.stage.addChild(resizer);
-    
     
     
     // // Add the bunny to the scene we are building
