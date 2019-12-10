@@ -8,7 +8,8 @@ module.exports = {
     },
     devtool: 'inline-source-map',
     devServer: {
-        contentBase: './dist'
+        contentBase: './dist',
+        host: '0.0.0.0'
     },
     resolve: {
         alias: {
@@ -43,7 +44,7 @@ module.exports = {
     plugins: [
         new CleanWebpackPlugin(['dist']),
         new HtmlWebpackPlugin({
-        title: 'Output Management'
+        title: '旷视年会'
         })
     ],
     output: {
